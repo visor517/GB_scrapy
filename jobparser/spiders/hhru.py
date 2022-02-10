@@ -1,5 +1,6 @@
 import scrapy
 from scrapy.http import HtmlResponse
+from jobparser.items import JobparserItem
 
 
 class HhruSpider(scrapy.Spider):
@@ -19,6 +20,29 @@ class HhruSpider(scrapy.Spider):
 
     def vacancy_parse(self, response: HtmlResponse):
         name = response.xpath("//h1//text()").get()
-        salary = response.xpath("//div[@data-qa='vacancy-salary']//text()").getall()
+        salary_min, salary_max, salary_cur = self.prepare_salary(response.xpath("//div[@data-qa='vacancy-salary']//text()").getall())
         url = response.url
-        print(name)
+        yield JobparserItem(name=name, url=url, salary_min=salary_min, salary_max=salary_max, salary_cur=salary_cur)
+
+    @staticmethod
+    def prepare_salary(salary):
+        salary_min, salary_max, salary_cur = None, None, None
+        if len(salary) > 1:
+            salary_cur = salary[-2]
+            if salary[0].startswith('от'):
+                salary_min = salary[1]
+                if salary[2].find('до'):
+                    salary_max = salary[3]
+            if salary[0].startswith('до'):
+                salary_max = salary[1]
+
+            try:
+                salary_min = int(salary_min.replace('\xa0', ''))
+            except:
+                salary_min = None
+            try:
+                salary_max = int(salary_max.replace('\xa0', ''))
+            except:
+                salary_max = None
+
+        return salary_min, salary_max, salary_cur
