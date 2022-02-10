@@ -15,7 +15,6 @@ class JobparserPipeline:
         self.mongobase = client.vacancies0210
 
     def process_item(self, item, spider):
-        print()
-        # collection = self.mongobase[spider.name]
-        # collection.insert_one(item)
+        collection = self.mongobase[spider.name]
+        collection.insert_one(item)
         return item
